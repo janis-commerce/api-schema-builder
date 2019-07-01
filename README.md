@@ -1,19 +1,20 @@
 # api-schema-builder
+[![Build Status](https://travis-ci.org/janis-commerce/api-schema-builder.svg?branch=JCN-96-api-schema-builder)](https://travis-ci.org/janis-commerce/api-schema-builder)
+[![Coverage Status](https://coveralls.io/repos/github/janis-commerce/api-schema-builder/badge.svg?branch=JCN-96-api-schema-builder)](https://coveralls.io/github/janis-commerce/api-schema-builder?branch=JCN-96-api-schema-builder)
 
-Build the api schemas
-
-## Installation
-```sh
-npm install janiscommerce/api-schema-builder
-```
-
-## API
-
+Build the Api Schemas.
 
 ## Usage
-```js
-const ApiSchemaBuilder = require('janiscommerce/api-schema-builder');
 
+In the console
+
+```sh
+npx janiscommerce/api-schema-builder
 ```
 
-## Examples
+* It will build `/root/schemas/public.json` with the Api schema. 
+* If the file exist it will be override.
+
+## Configuration
+
+The Api Schemas must be in *Yaml* files in `/root/schemas/src/`, according to [OpenAPI 3.0.0](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md) specification.
