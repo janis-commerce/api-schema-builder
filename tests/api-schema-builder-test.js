@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('assert');
+const sandbox = require('sinon').createSandbox();
 
 const { ApiSchemaBuilder, ApiSchemaBuilderError } = require('./../lib');
 
@@ -10,7 +11,7 @@ describe('ApiSchemaBuilder', () => {
 		it('should do nothing', () => {
 			assert(ApiSchemaBuilder);
 			assert(ApiSchemaBuilderError);
-		})
+		});
 	});
 
 });
@@ -18,7 +19,7 @@ describe('ApiSchemaBuilder', () => {
 describe('index', () => {
 
 	before(() => {
-		sandbox.stub(ApiSchemaBuilder.prototype, 'execute');
+		sandbox.stub(ApiSchemaBuilder.prototype, 'build');
 	});
 
 	after(() => {

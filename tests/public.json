@@ -1,0 +1,102 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"title": "Janis CORE",
+		"description": "This methods are availables in every microservice",
+		"version": "1.0.0"
+	},
+	"tags": [
+		{
+			"name": "CORE",
+			"description": "Core apis"
+		}
+	],
+	"servers": [
+		{
+			"url": "https://{{service}}.janis.in/",
+			"description": "The PROD API server",
+			"variables": {
+				"basePath": {
+					"default": "api"
+				},
+				"environment": {
+					"default": "prod"
+				}
+			}
+		},
+		{
+			"url": "https://{{service}}.janisqa.in/",
+			"description": "The QA API server",
+			"variables": {
+				"basePath": {
+					"default": "api"
+				},
+				"environment": {
+					"default": "qa"
+				}
+			}
+		},
+		{
+			"url": "https://{{service}}.janisdev.in/",
+			"description": "The Beta API server",
+			"variables": {
+				"basePath": {
+					"default": "api"
+				},
+				"environment": {
+					"default": "beta"
+				}
+			}
+		},
+		{
+			"url": "http://localhost:3006/",
+			"description": "The DEV API server",
+			"variables": {
+				"basePath": {
+					"default": "api"
+				},
+				"environment": {
+					"default": "dev"
+				}
+			}
+		}
+	],
+	"paths": {
+		"/test/{id}": {
+			"x-janis-namespace": "test",
+			"x-janis-method": "sarasa",
+			"get": {
+				"responses": {
+					"200": {
+						"description": "Ok"
+					},
+					"400": {
+						"description": "Invalid data"
+					}
+				}
+			}
+		},
+		"/test": {
+			"get": {
+				"responses": {
+					"200": {
+						"description": "Ok"
+					},
+					"400": {
+						"description": "Invalid data"
+					}
+				}
+			},
+			"post": {
+				"responses": {
+					"200": {
+						"description": "POST IT"
+					},
+					"400": {
+						"description": "Invalid data now"
+					}
+				}
+			}
+		}
+	}
+}

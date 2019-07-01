@@ -3,6 +3,6 @@
 const { ApiSchemaBuilder } = require('./lib');
 
 (async () => {
-	const ApiSchemaBuilder = new ApiSchemaBuilder();
-	await ApiSchema.execute();
+	const apiSchemaBuilder = new ApiSchemaBuilder();
+	await apiSchemaBuilder.build();
 })();
