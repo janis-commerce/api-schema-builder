@@ -1,6 +1,6 @@
 'use strict';
 
-const { ApiSchemaBuilder } = require('./lib');
+const ApiSchemaBuilder = require('./lib');
 
 (async () => {
 	const apiSchemaBuilder = new ApiSchemaBuilder();
