@@ -6,55 +6,29 @@ const path = require('path');
 const MockFs = require('mock-fs');
 const fs = require('fs');
 
-const { ApiSchemaBuilder } = require('./../lib');
-
-const fakeBaseYML = `
-openapi: 3.0.0
-info:
-  title: Fake Core
-  description: This methods are availables in every microservice
-  version: 1.0.0
-tags:
-  - name: CORE
-    description: Core apis
-servers:
-  - url: 'https://www.fake.com/'
-    description: The Most Fake API
-    variables:
-      basePath:
-        default: api
-      environment:
-        default: fake
-
-paths: {}
-`;
-
-before(() => {
-	// Avoid showing messages in console during tests
-	// sandbox.stub(console, 'log').callsFake(() => true);
-	// sandbox.stub(console, 'error').callsFake(() => true);
-});
+const ApiSchemaBuilder = require('./../lib');
 
 after(() => {
 	sandbox.restore();
 	MockFs.restore();
 });
 
-
 describe('ApiSchemaBuilder', () => {
 
+	let apiSchemaBuilder;
 
 	describe('isDirectory', () => {
 
+		let directory;
+
 		context('when directories and files exist', () => {
-			let apiSchemaBuilder;
-			let directory;
 
 			before(() => {
+
 				MockFs({
 					schemas: {
 						src: {
-							'base.yml': fakeBaseYML,
+							'base.yml': 'Movie API',
 							test: {}
 						}
 					}
@@ -84,9 +58,6 @@ describe('ApiSchemaBuilder', () => {
 
 		context('when no directories or files exist', () => {
 
-			let apiSchemaBuilder;
-			let directory;
-
 			before(() => {
 				MockFs({});
 
@@ -103,7 +74,7 @@ describe('ApiSchemaBuilder', () => {
 			});
 
 			it('should return FALSE if path is non valid file', async () => {
-				directory = path.join(ApiSchemaBuilder.schemaSrcDir, 'build.yml');
+				directory = path.join(ApiSchemaBuilder.schemaSrcDir, 'base.yml');
 
 				assert(!await apiSchemaBuilder._isDirectory(directory));
 			});
@@ -111,18 +82,89 @@ describe('ApiSchemaBuilder', () => {
 
 	});
 
+	describe('getSourceTree', () => {
+
+		apiSchemaBuilder = new ApiSchemaBuilder();
+		const baseFile = path.join(ApiSchemaBuilder.schemaSrcDir, 'public', 'base.yml');
+		const catalogListFile = path.join(ApiSchemaBuilder.schemaSrcDir, 'public', 'catalog', 'list.yml');
+
+		before(() => {
+			MockFs({
+				schemas: {
+					src: {
+						public: {
+							catalog: {
+								'list.yml': 'paths:\n /catalog:\n  get'
+							},
+							'base.yml': 'Api: Movie Fake\n paths: {}'
+						},
+						'public.json': '{ "Api" : "Movie Fake" }'
+					}
+				}
+			});
+		});
+
+		after(() => {
+			sandbox.restore();
+			MockFs.restore();
+		});
+
+		it('should return the correct tree object, ignoring the \'public.json\'', async () => {
+
+			const treeExpected = {
+				public: {
+					nodes: {
+						catalog: {
+							nodes: {},
+							schemas: [catalogListFile]
+						}
+					},
+					schemas: [baseFile]
+				}
+			};
+			const tree = await apiSchemaBuilder._getSourceTree();
+
+			assert.deepEqual(tree, treeExpected);
+		});
+
+		it('should return the correct tree object, when tree params is already init, ignoring the \'public.json\'', async () => {
+
+			const treeExpected = {
+				public: {
+					nodes: {
+						catalog: {
+							nodes: {},
+							schemas: [catalogListFile]
+						}
+					},
+					schemas: [baseFile]
+				}
+			};
+
+			const tree = await apiSchemaBuilder._getSourceTree(this.constructor.schemaSrcDir, [], { public: { nodes: {}, schemas: [] } });
+
+			assert.deepEqual(tree, treeExpected);
+
+		});
+
+		it('should reject when directory parametre is not a directory ', async () => {
+
+			await assert.rejects(apiSchemaBuilder._getSourceTree(baseFile));
+		});
+	});
+
 	describe('mergeSchemas', () => {
-		const apiSchemaBuilder = new ApiSchemaBuilder();
+		apiSchemaBuilder = new ApiSchemaBuilder();
 
 		it('should merge a list of objects into a single object', () => {
 
-			const obj1 = { obj1: 'obj1' };
-			const obj2 = { obj2: 'obj2' };
-			const obj3 = { obj3: 'obj3' };
+			const pet1 = { best: 'Cats' };
+			const pet2 = { worst: 'Dogs' };
+			const pet3 = { forbidden: 'Lizards' };
 
-			const merge = apiSchemaBuilder._mergeSchemas([obj1, obj2, obj3]);
+			const merge = apiSchemaBuilder._mergeSchemas([pet1, pet2, pet3]);
 
-			assert.deepEqual(merge, { ...obj1, ...obj2, ...obj3 });
+			assert.deepEqual(merge, { ...pet1, ...pet2, ...pet3 });
 		});
 
 		it('should throw error if nothing to merge', () => {
@@ -133,32 +175,32 @@ describe('ApiSchemaBuilder', () => {
 
 	describe('parseFile', () => {
 
-		const apiSchemaBuilder = new ApiSchemaBuilder();
+		apiSchemaBuilder = new ApiSchemaBuilder();
 
 		it('should return an object from a yml string', () => {
 
-			const object = apiSchemaBuilder._parseFile('yml', 'foo: bar');
+			const object = apiSchemaBuilder._parseFile('yml', 'ping: pong');
 
-			assert.deepEqual(object, { foo: 'bar' });
+			assert.deepEqual(object, { ping: 'pong' });
 		});
 
 		it('should return an object from a yaml string', () => {
 
-			const object = apiSchemaBuilder._parseFile('yaml', 'foo: bar');
+			const object = apiSchemaBuilder._parseFile('yaml', 'ping: pong');
 
-			assert.deepEqual(object, { foo: 'bar' });
+			assert.deepEqual(object, { ping: 'pong' });
 		});
 
 		it('should return an object from a JSON string', () => {
 
-			const object = apiSchemaBuilder._parseFile('json', '{ "foo": "bar" }');
+			const object = apiSchemaBuilder._parseFile('json', '{ "ping": "pong" }');
 
-			assert.deepEqual(object, { foo: 'bar' });
+			assert.deepEqual(object, { ping: 'pong' });
 		});
 
 		it('should throw a SyntaxError from an invalid yml file', () => {
 
-			assert.throws(() => apiSchemaBuilder._parseFile('yml', 'foo & bar\n\ttest'), { name: 'SyntaxError' });
+			assert.throws(() => apiSchemaBuilder._parseFile('yml', 'ping & pong\n\ttest'), { name: 'SyntaxError' });
 		});
 
 		it('should return null since the file type has no implementation', () => {
@@ -173,21 +215,21 @@ describe('ApiSchemaBuilder', () => {
 
 		it('should return a list of schema paths from tree', async () => {
 
-			const apiSchemaBuilder = new ApiSchemaBuilder();
+			apiSchemaBuilder = new ApiSchemaBuilder();
 
-			const IPCTreeMock = {
+			const moviesTreeMock = {
 				nodes: {
 					catalog: {
 						nodes: {},
 						schemas: ['catalog.yml']
 					}
 				},
-				schemas: ['ipc.yml', 'base.json']
+				schemas: ['movie.yml', 'public.json']
 			};
 
-			const schemaPaths = apiSchemaBuilder._getSchemaPathsList(IPCTreeMock);
+			const schemaPaths = apiSchemaBuilder._getSchemaPathsList(moviesTreeMock);
 
-			assert.deepEqual(schemaPaths, ['ipc.yml', 'base.json', 'catalog.yml']);
+			assert.deepEqual(schemaPaths, ['movie.yml', 'public.json', 'catalog.yml']);
 		});
 
 
@@ -195,7 +237,7 @@ describe('ApiSchemaBuilder', () => {
 
 	describe('readSchemaFiles', () => {
 
-		const apiSchemaBuilder = new ApiSchemaBuilder();
+		apiSchemaBuilder = new ApiSchemaBuilder();
 
 		afterEach(() => {
 			MockFs.restore();
@@ -204,26 +246,26 @@ describe('ApiSchemaBuilder', () => {
 		it('should return a list of schema objects', async () => {
 
 			MockFs({
-				'base.yml': 'foo: bar',
-				'base.json': '{ "foo": "bar" }'
+				'base.yml': 'ping: pong',
+				'public.json': '{ "ping": "pong" }'
 			});
 
-			const schemaPaths = ['base.yml', 'base.json'];
+			const schemaPaths = ['base.yml', 'public.json'];
 
 			const files = await apiSchemaBuilder._readSchemaFiles(schemaPaths);
 
-			assert.deepEqual(files, [{ foo: 'bar' }, { foo: 'bar' }]);
+			assert.deepEqual(files, [{ ping: 'pong' }, { ping: 'pong' }]);
 
 		});
 
 		it('should throw an error since it was unable to parse a file', async () => {
 
 			MockFs({
-				'base.yml': 'foo: bar',
-				'base.json': '{ "foo" }'
+				'base.yml': 'ping: pong',
+				'public.json': '{ "ping" }'
 			});
 
-			const schemaPaths = ['ipc.yml', 'base.json'];
+			const schemaPaths = ['base.yml', 'public.json'];
 
 			await assert.rejects(apiSchemaBuilder._readSchemaFiles(schemaPaths));
 		});
@@ -232,14 +274,14 @@ describe('ApiSchemaBuilder', () => {
 
 	describe('validateSchema', () => {
 
-		const apiSchemaBuilder = new ApiSchemaBuilder();
+		apiSchemaBuilder = new ApiSchemaBuilder();
 
 		it('should validate the schema without errors', async () => {
 
 			const schema = {
 				openapi: '3.0.0',
 				info: {
-					title: 'test',
+					title: 'Movie Api',
 					version: '1.0.0'
 				},
 				tags: [],
@@ -289,7 +331,30 @@ describe('ApiSchemaBuilder', () => {
 
 	describe('buildSchema', () => {
 
-		const apiSchemaBuilder = new ApiSchemaBuilder();
+		let mock;
+		let fsMock;
+
+		apiSchemaBuilder = new ApiSchemaBuilder();
+
+		const moviesTreeMock = {
+			nodes: {
+				catalog: {
+					nodes: {},
+					schemas: ['catalog.yml']
+				}
+			},
+			schemas: ['movie.yml', 'base.json']
+		};
+
+		const schemaPaths = ['movie.yml', 'base.json', 'catalog.yml'];
+		const schemaObjects = [{ movieBest: 'Forest Gump' }, { movieWorst: 'Titanic' }, { movieChildren: 'Mulan' }];
+		const schemaMerge = schemaObjects.reduce((acc, obj) => ({ ...acc, ...obj }), {});
+
+		beforeEach(() => {
+			mock = sandbox.mock(apiSchemaBuilder);
+			fsMock = sandbox.mock(fs);
+		});
+
 
 		afterEach(() => {
 			sandbox.restore();
@@ -297,24 +362,9 @@ describe('ApiSchemaBuilder', () => {
 
 		it('should build a schema and write the JSON file in the build output', async () => {
 
-			const mock = sandbox.mock(apiSchemaBuilder);
-			const fsMock = sandbox.mock(fs);
-			const IPCTreeMock = {
-				nodes: {
-					catalog: {
-						nodes: {},
-						schemas: ['catalog.yml']
-					}
-				},
-				schemas: ['ipc.yml', 'base.json']
-			};
-			const schemaPaths = ['ipc.yml', 'base.json', 'catalog.yml'];
-			const schemaObjects = [{ obj1: 'obj1' }, { obj2: 'obj2' }, { obj3: 'obj3' }];
-			const schemaMerge = schemaObjects.reduce((acc, obj) => ({ ...acc, ...obj }), {});
-
 			mock.expects('_getSchemaPathsList')
 				.once()
-				.withArgs(IPCTreeMock)
+				.withArgs(moviesTreeMock)
 				.returns(schemaPaths);
 			mock.expects('_readSchemaFiles')
 				.once()
@@ -326,7 +376,7 @@ describe('ApiSchemaBuilder', () => {
 				.returns(schemaMerge);
 			mock.expects('_validateSchema')
 				.once()
-				.withArgs('ipc', schemaMerge);
+				.withArgs('movie', schemaMerge);
 			fsMock.expects('mkdir')
 				.never();
 			fsMock.expects('writeFile')
@@ -334,29 +384,14 @@ describe('ApiSchemaBuilder', () => {
 				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(schemaMerge, null, '\t'))
 				.returns();
 
-			await assert.doesNotReject(apiSchemaBuilder._buildSchema('ipc', IPCTreeMock));
+			await assert.doesNotReject(apiSchemaBuilder._buildSchema('movie', moviesTreeMock));
 		});
 
 		it('should reject if can not make the file', async () => {
 
-			const mock = sandbox.mock(apiSchemaBuilder);
-			const fsMock = sandbox.mock(fs);
-			const IPCTreeMock = {
-				nodes: {
-					catalog: {
-						nodes: {},
-						schemas: ['catalog.yml']
-					}
-				},
-				schemas: ['ipc.yml', 'base.json']
-			};
-			const schemaPaths = ['ipc.yml', 'base.json', 'catalog.yml'];
-			const schemaObjects = [{ obj1: 'obj1' }, { obj2: 'obj2' }, { obj3: 'obj3' }];
-			const schemaMerge = schemaObjects.reduce((acc, obj) => ({ ...acc, ...obj }), {});
-
 			mock.expects('_getSchemaPathsList')
 				.once()
-				.withArgs(IPCTreeMock)
+				.withArgs(moviesTreeMock)
 				.returns(schemaPaths);
 			mock.expects('_readSchemaFiles')
 				.once()
@@ -368,10 +403,7 @@ describe('ApiSchemaBuilder', () => {
 				.returns(schemaMerge);
 			mock.expects('_validateSchema')
 				.once()
-				.withArgs('ipc', schemaMerge);
-			fsMock.expects('existsSync')
-				.once()
-				.returns(false);
+				.withArgs('movie', schemaMerge);
 			fsMock.expects('mkdir')
 				.never();
 			fsMock.expects('writeFile')
@@ -379,13 +411,13 @@ describe('ApiSchemaBuilder', () => {
 				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(schemaMerge, null, '\t'))
 				.rejects();
 
-			await assert.rejects(apiSchemaBuilder._buildSchema('ipc', IPCTreeMock));
+			await assert.rejects(apiSchemaBuilder._buildSchema('movie', moviesTreeMock));
 		});
 	});
 
 	describe('build', () => {
 
-		const apiSchemaBuilder = new ApiSchemaBuilder();
+		apiSchemaBuilder = new ApiSchemaBuilder();
 
 		beforeEach(() => {
 			// Avoid showing messages in console during tests
@@ -479,64 +511,6 @@ describe('ApiSchemaBuilder', () => {
 			await apiSchemaBuilder.build();
 
 			assert(spyBuilder.notCalled);
-		});
-	});
-
-	describe('getSourceTree', () => {
-
-
-		const baseFile = path.join(ApiSchemaBuilder.schemaSrcDir, 'public', 'base.yml');
-
-		const apiSchemaBuilder = new ApiSchemaBuilder();
-
-		before(() => {
-			MockFs({
-				schemas: {
-					src: {
-						public: {
-							sku: {
-								item: {}
-							},
-							'base.yml': 'FakeApi: true'
-						},
-						'public.json': '{ "Api" : "Fake" }'
-					}
-				}
-			});
-		});
-
-		after(() => {
-			sandbox.restore();
-			MockFs.restore();
-		});
-
-		it('should return the correct tree object, ignoring the \'public.json\' ', async () => {
-
-			const treeExpected = {
-				public: {
-					nodes: {
-						sku: {
-							nodes: {
-								item: {
-									nodes: {},
-									schemas: []
-								}
-							},
-							schemas: []
-						}
-					},
-					schemas: [baseFile]
-				}
-			};
-			const tree = await apiSchemaBuilder._getSourceTree();
-
-			assert.deepEqual(tree, treeExpected);
-		});
-
-
-		it('should reject when directory is not a base directory ', async () => {
-
-			await assert.rejects(apiSchemaBuilder._getSourceTree(baseFile));
 		});
 	});
 
