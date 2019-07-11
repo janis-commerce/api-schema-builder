@@ -512,6 +512,24 @@ describe('ApiSchemaBuilder', () => {
 
 			assert(spyBuilder.notCalled);
 		});
+
+		it('should do not build \'public.json\' but not rejects when no files in \'schemas/src\'', async () => {
+
+			const mock = sandbox.mock(apiSchemaBuilder);
+
+			mock.expects('_isDirectory').twice()
+				.returns(true);
+
+			mock.expects('_getSourceTree').once()
+				.returns({});
+
+			mock.expects('_buildSchema').never();
+
+			await apiSchemaBuilder.build();
+
+			mock.verify();
+
+		});
 	});
 
 });
