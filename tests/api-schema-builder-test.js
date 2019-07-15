@@ -271,7 +271,6 @@ describe('ApiSchemaBuilder', () => {
 		});
 	});
 
-
 	describe('validateSchema', () => {
 
 		apiSchemaBuilder = new ApiSchemaBuilder();
@@ -336,19 +335,105 @@ describe('ApiSchemaBuilder', () => {
 
 		apiSchemaBuilder = new ApiSchemaBuilder();
 
-		const moviesTreeMock = {
+		const movieTreeMock = {
 			nodes: {
 				catalog: {
 					nodes: {},
-					schemas: ['catalog.yml']
+					schemas: ['list.yml']
 				}
 			},
-			schemas: ['movie.yml', 'base.json']
+			schemas: ['base.yml']
 		};
 
-		const schemaPaths = ['movie.yml', 'base.json', 'catalog.yml'];
-		const schemaObjects = [{ movieBest: 'Forest Gump' }, { movieWorst: 'Titanic' }, { movieChildren: 'Mulan' }];
-		const schemaMerge = schemaObjects.reduce((acc, obj) => ({ ...acc, ...obj }), {});
+		const movieSchemaPaths = [
+			'movieApp/schemas/src/movie/base.yml',
+			'movieApp/schemas/src/movie/catalog/list.yml'
+		];
+
+		const movieSchemaObjects = [
+			{
+				paths: {
+					'/movie': {
+						get: {
+							responses: {
+								200: {
+									description: 'OK'
+								}
+							}
+						}
+					}
+				}
+			},
+			{
+				paths: {
+					'/movie/catalog': {
+						get: {
+							responses: {
+								200: {
+									description: 'OK'
+								},
+								400: {
+									description: 'Not Found'
+								}
+							}
+						}
+					}
+				}
+			}
+
+		];
+
+		const movieSchemaMerge = {
+			paths: {
+				'/movie': {
+					get: {
+						responses: {
+							200: {
+								description: 'Ok'
+							}
+						}
+					}
+				},
+				'/movie/catalog': {
+					get: {
+						responses: {
+							200: {
+								description: 'Ok'
+							},
+							400: {
+								description: 'Not Found'
+							}
+						}
+					}
+				}
+			}
+		};
+
+		const movieSchemaResolved = {
+			paths: {
+				'/movie': {
+					get: {
+						responses: {
+							200: {
+								description: 'Ok'
+							}
+						}
+					}
+				},
+				'/movie/catalog': {
+					get: {
+						responses: {
+							200: {
+								description: 'Ok'
+							},
+							400: {
+								description: 'Not Found'
+							}
+						}
+					}
+				}
+			}
+		};
 
 		beforeEach(() => {
 			mock = sandbox.mock(apiSchemaBuilder);
@@ -364,54 +449,189 @@ describe('ApiSchemaBuilder', () => {
 
 			mock.expects('_getSchemaPathsList')
 				.once()
-				.withArgs(moviesTreeMock)
-				.returns(schemaPaths);
+				.withArgs(movieTreeMock)
+				.returns(movieSchemaPaths);
 			mock.expects('_readSchemaFiles')
 				.once()
-				.withArgs(schemaPaths)
-				.returns(schemaObjects);
+				.withArgs(movieSchemaPaths)
+				.returns(movieSchemaObjects);
 			mock.expects('_mergeSchemas')
 				.once()
-				.withArgs(schemaObjects)
-				.returns(schemaMerge);
+				.withArgs(movieSchemaObjects)
+				.returns(movieSchemaMerge);
 			mock.expects('_validateSchema')
 				.once()
-				.withArgs('movie', schemaMerge);
+				.withArgs('movie', movieSchemaResolved);
 			fsMock.expects('mkdir')
 				.never();
 			fsMock.expects('writeFile')
 				.once()
-				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(schemaMerge, null, '\t'))
+				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, '\t'))
 				.returns();
 
-			await assert.doesNotReject(apiSchemaBuilder._buildSchema('movie', moviesTreeMock));
+			await assert.doesNotReject(apiSchemaBuilder._buildSchema('movie', movieTreeMock));
 		});
 
 		it('should reject if can not make the file', async () => {
 
 			mock.expects('_getSchemaPathsList')
 				.once()
-				.withArgs(moviesTreeMock)
-				.returns(schemaPaths);
+				.withArgs(movieTreeMock)
+				.returns(movieSchemaPaths);
 			mock.expects('_readSchemaFiles')
 				.once()
-				.withArgs(schemaPaths)
-				.returns(schemaObjects);
+				.withArgs(movieSchemaPaths)
+				.returns(movieSchemaObjects);
 			mock.expects('_mergeSchemas')
 				.once()
-				.withArgs(schemaObjects)
-				.returns(schemaMerge);
+				.withArgs(movieSchemaObjects)
+				.returns(movieSchemaMerge);
 			mock.expects('_validateSchema')
 				.once()
-				.withArgs('movie', schemaMerge);
+				.withArgs('movie', movieSchemaResolved);
 			fsMock.expects('mkdir')
 				.never();
 			fsMock.expects('writeFile')
 				.once()
-				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(schemaMerge, null, '\t'))
+				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, '\t'))
 				.rejects();
 
-			await assert.rejects(apiSchemaBuilder._buildSchema('movie', moviesTreeMock));
+			await assert.rejects(apiSchemaBuilder._buildSchema('movie', movieTreeMock));
+		});
+
+		it('should insert the ref if it\'s a json file', async () => {
+
+			movieSchemaObjects[1].paths['/movie/catalog'].get.responses[200] = {
+				content: {
+					'application/json': {
+						schema: {
+							$ref: '../content.json'
+						}
+					}
+				}
+			};
+			movieSchemaMerge.paths['/movie/catalog'].get.responses[200] = {
+				content: {
+					'application/json': {
+						schema: {
+							$ref: '../content.json'
+						}
+					}
+				}
+			};
+
+			movieSchemaResolved.paths['/movie/catalog'].get.responses[200] = {
+				content: {
+					'application/json': {
+						schema: {
+							type: 'string'
+						}
+					}
+				}
+			};
+
+			mock.expects('_getSchemaPathsList')
+				.once()
+				.withArgs(movieTreeMock)
+				.returns(movieSchemaPaths);
+			mock.expects('_readSchemaFiles')
+				.once()
+				.withArgs(movieSchemaPaths)
+				.returns(movieSchemaObjects);
+			mock.expects('_mergeSchemas')
+				.once()
+				.withArgs(movieSchemaObjects)
+				.returns(movieSchemaMerge);
+			// Search de Refs
+			fsMock.expects('readFile')
+				.once()
+				.callsFake((location, encoding, cb) => {
+					if(location === `${ApiSchemaBuilder.schemaSrcDir}/content.json`)
+						cb(undefined, { text: '{"type": "string"}' });
+					else
+						cb(new Error('fail'));
+				});
+
+			mock.expects('_validateSchema')
+				.once()
+				.withArgs('movie', movieSchemaResolved);
+
+			fsMock.expects('mkdir')
+				.never();
+			fsMock.expects('writeFile')
+				.once()
+				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, '\t'))
+				.returns();
+
+			await assert.doesNotReject(apiSchemaBuilder._buildSchema('movie', movieTreeMock));
+
+		});
+
+		it('should insert the ref if it\'s a yml file', async () => {
+			movieSchemaObjects[1].paths['/movie/catalog'].get.responses[200] = {
+				content: {
+					'application/json': {
+						schema: {
+							$ref: '../content.yml'
+						}
+					}
+				}
+			};
+			movieSchemaMerge.paths['/movie/catalog'].get.responses[200] = {
+				content: {
+					'application/json': {
+						schema: {
+							$ref: '../content.yml'
+						}
+					}
+				}
+			};
+
+			movieSchemaResolved.paths['/movie/catalog'].get.responses[200] = {
+				content: {
+					'application/json': {
+						schema: {
+							type: 'string'
+						}
+					}
+				}
+			};
+
+			mock.expects('_getSchemaPathsList')
+				.once()
+				.withArgs(movieTreeMock)
+				.returns(movieSchemaPaths);
+			mock.expects('_readSchemaFiles')
+				.once()
+				.withArgs(movieSchemaPaths)
+				.returns(movieSchemaObjects);
+			mock.expects('_mergeSchemas')
+				.once()
+				.withArgs(movieSchemaObjects)
+				.returns(movieSchemaMerge);
+			// Search de Refs
+			fsMock.expects('readFile')
+				.once()
+				.callsFake((location, encoding, cb) => {
+					if(location === `${ApiSchemaBuilder.schemaSrcDir}/content.yml`)
+						cb(undefined, { text: 'type: string' });
+					else
+						cb(new Error('fail'));
+				});
+
+			mock.expects('_validateSchema')
+				.once()
+				.withArgs('movie', movieSchemaResolved);
+
+			fsMock.expects('mkdir')
+				.never();
+			fsMock.expects('writeFile')
+				.once()
+				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, '\t'))
+				.returns();
+
+			await assert.doesNotReject(apiSchemaBuilder._buildSchema('movie', movieTreeMock));
+
 		});
 	});
 
