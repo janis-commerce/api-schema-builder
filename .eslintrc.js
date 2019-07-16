@@ -45,7 +45,7 @@ module.exports = {
 		'no-underscore-dangle': ['warn', {
 			allowAfterThis: true,
 			allowAfterSuper: true,
-			allow: ['_call', '__rootpath', '_where']
+			allow: ['_call', '__rootpath', '_where', '_isDirectory', '_getSourceTree', '_mergeSchemas', '_parseFile', '_getSchemaPathsList', '_readSchemaFiles', '_validateSchema', '_buildSchema']
 		}],
 
 		'no-tabs': 0,
