@@ -9,7 +9,7 @@ Build the Api Schemas.
 In the console
 
 ```sh
-npx janiscommerce/api-schema-builder
+npx @janiscommerce/api-schema-builder
 ```
 
 * It will build `/root/schemas/public.json` with the Api schema.
