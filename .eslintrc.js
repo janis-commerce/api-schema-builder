@@ -28,6 +28,7 @@ module.exports = {
 
 	rules: {
 		'operator-linebreak': 0,
+		'no-console': 0,
 		'no-continue': 0,
 		'no-plusplus': 0,
 		'prefer-spread': 0,
