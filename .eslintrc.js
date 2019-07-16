@@ -28,6 +28,7 @@ module.exports = {
 
 	rules: {
 		'operator-linebreak': 0,
+		'no-console': 0,
 		'no-continue': 0,
 		'no-plusplus': 0,
 		'prefer-spread': 0,
@@ -45,7 +46,7 @@ module.exports = {
 		'no-underscore-dangle': ['warn', {
 			allowAfterThis: true,
 			allowAfterSuper: true,
-			allow: ['_call', '__rootpath', '_where']
+			allow: ['_call', '__rootpath', '_where', '_isDirectory', '_getSourceTree', '_mergeSchemas', '_parseFile', '_getSchemaPathsList', '_readSchemaFiles', '_validateSchema', '_buildSchema']
 		}],
 
 		'no-tabs': 0,
