@@ -1,8 +1,11 @@
 {
   "name": "@janiscommerce/api-schema-builder",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Build the api schemas",
   "main": "index.js",
+  "bin": {
+    "api-schema-builder": "index.js"
+  },
   "scripts": {
     "test": "export TEST_ENV=true; mocha --exit -R nyan --recursive tests/",
     "test-ci": "nyc --reporter=html --reporter=text mocha --recursive tests/",
