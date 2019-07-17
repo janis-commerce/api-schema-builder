@@ -643,6 +643,7 @@ describe('ApiSchemaBuilder', () => {
 			// Avoid showing messages in console during tests
 			sandbox.stub(console, 'log').callsFake(() => true);
 			sandbox.stub(console, 'error').callsFake(() => true);
+			sandbox.stub(process, 'exit');
 		});
 
 		afterEach(() => {
