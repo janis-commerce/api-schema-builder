@@ -638,12 +638,13 @@ describe('ApiSchemaBuilder', () => {
 	describe('build', () => {
 
 		apiSchemaBuilder = new ApiSchemaBuilder();
+		let exit;
 
 		beforeEach(() => {
 			// Avoid showing messages in console during tests
 			sandbox.stub(console, 'log').callsFake(() => true);
 			sandbox.stub(console, 'error').callsFake(() => true);
-			sandbox.stub(process, 'exit');
+			exit = sandbox.stub(process, 'exit');
 		});
 
 		afterEach(() => {
@@ -701,6 +702,9 @@ describe('ApiSchemaBuilder', () => {
 
 			await apiSchemaBuilder.build();
 
+			sandbox.assert.calledOnce(exit);
+			sandbox.assert.calledWith(exit, -1);
+
 			assert(spyBuilder.notCalled);
 		});
 
@@ -722,6 +726,9 @@ describe('ApiSchemaBuilder', () => {
 
 			await apiSchemaBuilder.build();
 
+			sandbox.assert.calledOnce(exit);
+			sandbox.assert.calledWith(exit, -1);
+
 			assert(spyBuilder.notCalled);
 		});
 
@@ -730,6 +737,9 @@ describe('ApiSchemaBuilder', () => {
 			const spyBuilder = sandbox.spy(apiSchemaBuilder, '_buildSchema');
 
 			await apiSchemaBuilder.build();
+
+			sandbox.assert.calledOnce(exit);
+			sandbox.assert.calledWith(exit, -1);
 
 			assert(spyBuilder.notCalled);
 		});
@@ -747,6 +757,9 @@ describe('ApiSchemaBuilder', () => {
 			mock.expects('_buildSchema').never();
 
 			await apiSchemaBuilder.build();
+
+			sandbox.assert.calledOnce(exit);
+			sandbox.assert.calledWith(exit, -1);
 
 			mock.verify();
 
