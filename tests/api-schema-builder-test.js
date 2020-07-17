@@ -200,7 +200,7 @@ describe('ApiSchemaBuilder', () => {
 
 		it('should throw a SyntaxError from an invalid yml file', () => {
 
-			assert.throws(() => apiSchemaBuilder._parseFile('yml', 'ping & pong\n\ttest'), { name: 'SyntaxError' });
+			assert.throws(() => apiSchemaBuilder._parseFile('yml', 'ping: & pong\n\ttest'), { name: 'SyntaxError' });
 		});
 
 		it('should return null since the file type has no implementation', () => {

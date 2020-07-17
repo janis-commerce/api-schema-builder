@@ -37,8 +37,8 @@
     "test": "tests"
   },
   "dependencies": {
+    "js-yaml": "^3.14.0",
     "json-refs": "^3.0.13",
-    "openapi-schema-validator": "^3.0.3",
-    "yamljs": "^0.3.0"
+    "openapi-schema-validator": "^3.0.3"
   }
 }

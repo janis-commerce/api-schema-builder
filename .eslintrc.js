@@ -23,7 +23,7 @@ module.exports = {
 	},
 
 	settings: {
-		'import/core-modules': ['aws-sdk', 'lodash', 'yamljs', 'openapi-schema-validator']
+		'import/core-modules': ['aws-sdk', 'lodash', 'openapi-schema-validator']
 	},
 
 	rules: {
