@@ -466,7 +466,7 @@ describe('ApiSchemaBuilder', () => {
 				.never();
 			fsMock.expects('writeFile')
 				.once()
-				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, '\t'))
+				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, 2))
 				.returns();
 
 			await assert.doesNotReject(apiSchemaBuilder._buildSchema('movie', movieTreeMock));
@@ -493,7 +493,7 @@ describe('ApiSchemaBuilder', () => {
 				.never();
 			fsMock.expects('writeFile')
 				.once()
-				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, '\t'))
+				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, 2))
 				.rejects();
 
 			await assert.rejects(apiSchemaBuilder._buildSchema('movie', movieTreeMock));
@@ -560,7 +560,7 @@ describe('ApiSchemaBuilder', () => {
 				.never();
 			fsMock.expects('writeFile')
 				.once()
-				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, '\t'))
+				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, 2))
 				.returns();
 
 			await assert.doesNotReject(apiSchemaBuilder._buildSchema('movie', movieTreeMock));
@@ -627,7 +627,7 @@ describe('ApiSchemaBuilder', () => {
 				.never();
 			fsMock.expects('writeFile')
 				.once()
-				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, '\t'))
+				.withArgs(`${ApiSchemaBuilder.buildFile}`, JSON.stringify(movieSchemaResolved, null, 2))
 				.returns();
 
 			await assert.doesNotReject(apiSchemaBuilder._buildSchema('movie', movieTreeMock));
