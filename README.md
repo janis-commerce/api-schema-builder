@@ -1,5 +1,5 @@
 # api-schema-builder
-[![Build Status](https://travis-ci.org/janis-commerce/api-schema-builder.svg?branch=master)](https://travis-ci.org/janis-commerce/api-schema-builder)
+![Build Status](https://github.com/janis-commerce/api-schema-builder/workflows/Build%20Status/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/janis-commerce/api-schema-builder/badge.svg?branch=master)](https://coveralls.io/github/janis-commerce/api-schema-builder?branch=master)
 
 Build the Api Schemas.
