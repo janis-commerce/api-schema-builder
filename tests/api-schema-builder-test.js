@@ -3,14 +3,49 @@
 const assert = require('assert');
 const sandbox = require('sinon').createSandbox();
 const path = require('path');
-const MockFs = require('mock-fs');
+const os = require('os');
 const fs = require('fs');
 
 const ApiSchemaBuilder = require('./../lib');
 
+/**
+ * Writes a tree of directories and files. Strings are file contents, objects are directories
+ * @param {string} directory
+ * @param {object} tree
+ */
+const writeTree = (directory, tree) => {
+	Object.entries(tree).forEach(([name, content]) => {
+
+		const elementPath = path.join(directory, name);
+
+		if(typeof content === 'string')
+			return fs.writeFileSync(elementPath, content);
+
+		fs.mkdirSync(elementPath);
+		writeTree(elementPath, content);
+	});
+};
+
+/**
+ * Creates a temporary directory with the received tree and makes it the process.cwd()
+ * @param {object} tree
+ * @returns {string} The temporary directory path
+ */
+const mockCwdTree = tree => {
+
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'api-schema-builder-'));
+
+	writeTree(directory, tree);
+
+	sandbox.stub(process, 'cwd').returns(directory);
+
+	return directory;
+};
+
+const removeTree = directory => fs.rmSync(directory, { recursive: true, force: true });
+
 after(() => {
 	sandbox.restore();
-	MockFs.restore();
 });
 
 describe('ApiSchemaBuilder', () => {
@@ -20,12 +55,13 @@ describe('ApiSchemaBuilder', () => {
 	describe('isDirectory', () => {
 
 		let directory;
+		let cwd;
 
 		context('when directories and files exist', () => {
 
 			before(() => {
 
-				MockFs({
+				cwd = mockCwdTree({
 					schemas: {
 						src: {
 							'base.yml': 'Movie API',
@@ -38,7 +74,8 @@ describe('ApiSchemaBuilder', () => {
 			});
 
 			after(() => {
-				MockFs.restore();
+				sandbox.restore();
+				removeTree(cwd);
 			});
 
 			it('should return TRUE if path is a valid directory', async () => {
@@ -59,13 +96,14 @@ describe('ApiSchemaBuilder', () => {
 		context('when no directories or files exist', () => {
 
 			before(() => {
-				MockFs({});
+				cwd = mockCwdTree({});
 
 				apiSchemaBuilder = new ApiSchemaBuilder();
 			});
 
 			after(() => {
-				MockFs.restore();
+				sandbox.restore();
+				removeTree(cwd);
 			});
 			it('should return FALSE if path is non valid directory', async () => {
 
@@ -85,11 +123,13 @@ describe('ApiSchemaBuilder', () => {
 	describe('getSourceTree', () => {
 
 		apiSchemaBuilder = new ApiSchemaBuilder();
-		const baseFile = path.join(ApiSchemaBuilder.schemaSrcDir, 'public', 'base.yml');
-		const catalogListFile = path.join(ApiSchemaBuilder.schemaSrcDir, 'public', 'catalog', 'list.yml');
+
+		let cwd;
+		let baseFile;
+		let catalogListFile;
 
 		before(() => {
-			MockFs({
+			cwd = mockCwdTree({
 				schemas: {
 					src: {
 						public: {
@@ -102,11 +142,14 @@ describe('ApiSchemaBuilder', () => {
 					}
 				}
 			});
+
+			baseFile = path.join(ApiSchemaBuilder.schemaSrcDir, 'public', 'base.yml');
+			catalogListFile = path.join(ApiSchemaBuilder.schemaSrcDir, 'public', 'catalog', 'list.yml');
 		});
 
 		after(() => {
 			sandbox.restore();
-			MockFs.restore();
+			removeTree(cwd);
 		});
 
 		it('should return the correct tree object, ignoring the \'public.json\'', async () => {
@@ -239,18 +282,21 @@ describe('ApiSchemaBuilder', () => {
 
 		apiSchemaBuilder = new ApiSchemaBuilder();
 
+		let cwd;
+
 		afterEach(() => {
-			MockFs.restore();
+			sandbox.restore();
+			removeTree(cwd);
 		});
 
 		it('should return a list of schema objects', async () => {
 
-			MockFs({
+			cwd = mockCwdTree({
 				'base.yml': 'ping: pong',
 				'public.json': '{ "ping": "pong" }'
 			});
 
-			const schemaPaths = ['base.yml', 'public.json'];
+			const schemaPaths = [path.join(cwd, 'base.yml'), path.join(cwd, 'public.json')];
 
 			const files = await apiSchemaBuilder._readSchemaFiles(schemaPaths);
 
@@ -260,12 +306,12 @@ describe('ApiSchemaBuilder', () => {
 
 		it('should throw an error since it was unable to parse a file', async () => {
 
-			MockFs({
+			cwd = mockCwdTree({
 				'base.yml': 'ping: pong',
 				'public.json': '{ "ping" }'
 			});
 
-			const schemaPaths = ['base.yml', 'public.json'];
+			const schemaPaths = [path.join(cwd, 'base.yml'), path.join(cwd, 'public.json')];
 
 			await assert.rejects(apiSchemaBuilder._readSchemaFiles(schemaPaths));
 		});
